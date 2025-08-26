@@ -1,15 +1,15 @@
-//lib/main.dart
-
 import 'package:device_backup_1989/appBackupservice.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
-      WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(); 
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(); // only this line
   runApp(const MyApp());
 }
+
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -25,35 +25,60 @@ class _MyAppState extends State<MyApp> {
     _startBackup();
   }
 
+  Future<void> testFirebaseSetup() async {
+    try {
+      // Write dummy data
+      await FirebaseFirestore.instance
+          .collection('testCollection')
+          .doc('testDoc')
+          .set({
+        'message': 'Hello Firebase!',
+        'timestamp': DateTime.now().toIso8601String()
+      });
+      print("✅ Dummy data written successfully!");
+
+      // Read the same data back
+      final snapshot = await FirebaseFirestore.instance
+          .collection('testCollection')
+          .doc('testDoc')
+          .get();
+
+      if (snapshot.exists) {
+        print("✅ Dummy data read successfully: ${snapshot.data()}");
+      } else {
+        print("❌ Document does not exist after writing!");
+      }
+    } catch (e) {
+      print("❌ Firebase setup error: $e");
+    }
+  }
+
   Future<String?> getFirebaseUid() async {
     User? user = FirebaseAuth.instance.currentUser;
 
     if (user != null) {
-       print("🎯 ${user.uid}");
-      return user.uid; // This is the Firebase UID
+      print("🎯 ${user.uid}");
+      return user.uid;
     } else {
-      // If not signed in, you can sign in anonymously
       UserCredential userCredential =
           await FirebaseAuth.instance.signInAnonymously();
-          print("📍 ${userCredential.user?.uid}");
+      print("📍 ${userCredential.user?.uid}");
       return userCredential.user?.uid;
     }
   }
 
   Future<void> _startBackup() async {
-    // Replace with Firebase UID after authentication
     String? userId = await getFirebaseUid();
     if (userId != null) {
+      await testFirebaseSetup(); // Call test
       await Appbackupservice.requestPermissionsAndFetchData(userId);
-     // await BackupService.backupData(userId);
-    }else{
+    } else {
       print("user Id is Null❌");
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // No UI, just a blank screen
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(

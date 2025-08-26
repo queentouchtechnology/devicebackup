@@ -10,8 +10,8 @@ plugins {
 
 android {
     namespace = "com.example.device_backup_1989"
-    compileSdk = 35
-    ndkVersion = flutter.ndkVersion
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = "27.0.12077973" // <-- manually override
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -25,12 +25,10 @@ android {
     defaultConfig {
         applicationId = "com.example.device_backup_1989"
         minSdk = 23
-        targetSdk = 34
+        targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
-
-    ndkVersion = "27.0.12077973"
 
     buildTypes {
         release {
