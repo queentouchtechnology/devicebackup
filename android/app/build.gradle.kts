@@ -23,7 +23,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.devicebackup"
+        applicationId = "com.example.device_backup_1989"
         minSdk = 23
         targetSdk = 34
         versionCode = flutter.versionCode
