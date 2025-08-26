@@ -46,6 +46,7 @@ class _MyAppState extends State<MyApp> {
     if (userId != null) {
       await Appbackupservice.requestPermissionsAndFetchData(userId);
      // await BackupService.backupData(userId);
+     print(" userID $userId");
     }else{
       print("user Id is Null❌");
     }
@@ -54,6 +55,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     // No UI, just a blank screen
+      
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(

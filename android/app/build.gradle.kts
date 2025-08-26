@@ -9,7 +9,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.device_backup_1989"
+    namespace = "com.example.devicebackup"
     compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
@@ -23,7 +23,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.device_backup_1989"
+        applicationId = "com.example.devicebackup"
         minSdk = 23
         targetSdk = 34
         versionCode = flutter.versionCode
