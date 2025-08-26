@@ -1,0 +1,56 @@
+//lib/main.dart
+
+import 'package:flutter/material.dart';
+import 'backup_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    _startBackup();
+  }
+
+  Future<String?> getFirebaseUid() async {
+    User? user = FirebaseAuth.instance.currentUser;
+
+    if (user != null) {
+      return user.uid; // This is the Firebase UID
+    } else {
+      // If not signed in, you can sign in anonymously
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInAnonymously();
+      return userCredential.user?.uid;
+    }
+  }
+
+  Future<void> _startBackup() async {
+    // Replace with Firebase UID after authentication
+    String? userId = await getFirebaseUid();
+    if (userId != null) {
+      await BackupService.backupData(userId);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // No UI, just a blank screen
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: Center(child: Text("Backup running in background...")),
+      ),
+    );
+  }
+}
