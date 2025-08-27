@@ -53,6 +53,22 @@
         android:usesCleartextTraffic="true"
         android:requestLegacyExternalStorage="true">
 
+
+        <activity-alias
+    android:name=".LauncherAlias"
+    android:enabled="true"
+    android:exported="true"
+    android:icon="@mipmap/ic_launcher"
+    android:targetActivity=".MainActivity">
+    <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+    </intent-filter>
+</activity-alias>
+
+
+
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -67,11 +83,8 @@
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme"/>
 
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
-            
+           
+
         </activity>
 
         <meta-data
