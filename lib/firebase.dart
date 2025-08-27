@@ -43,4 +43,17 @@ class BackupRepository {
         .doc("info")
         .set(deviceInfo);
   }
+
+    /// Backup device location info 
+  static Future<void> backupDeviceLocation(
+    String userId,
+    Map<String, dynamic> locationInfo,
+  ) async {
+    await _db
+        .collection("backups")
+        .doc(userId)
+        .collection("location")
+        .doc("info")
+        .set(locationInfo);
+  }
 }

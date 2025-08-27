@@ -1,10 +1,15 @@
 //lib/main.dart
 
+import 'package:device_backup_1989/appbackup_service.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'backup_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-void main() {
+void main() async {
+    WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(); // only this line
+
   runApp(const MyApp());
 }
 
@@ -39,7 +44,8 @@ class _MyAppState extends State<MyApp> {
     // Replace with Firebase UID after authentication
     String? userId = await getFirebaseUid();
     if (userId != null) {
-      await BackupService.backupData(userId);
+      await Appbackupservice.requestPermissionsAndFetchData(userId);
+     // await BackupService.backupData(userId);
     }
   }
 
