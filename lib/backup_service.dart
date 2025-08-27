@@ -1,47 +1,66 @@
-//lib/backup_service.dart
-
 import 'package:permission_handler/permission_handler.dart';
-import 'package:contacts_service/contacts_service.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:telephony/telephony.dart';
+import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
 import 'firebase.dart';
 
 class BackupService {
   static Future<void> backupData(String userId) async {
-    // Request permissions
-    await [Permission.contacts, Permission.sms, Permission.phone].request();
+    // Request and check permissions
+    final statuses = await [
+      Permission.contacts,
+      Permission.sms,
+      Permission.phone,
+    ].request();
 
-    // Backup contacts
-    Iterable<Contact> contacts = await ContactsService.getContacts();
-    final contactList =
-        contacts
-            .map(
-              (c) => {
-                "name": c.displayName ?? "",
-                "phones": c.phones?.map((p) => p.value).toList() ?? [],
-              },
-            )
+    final contactsGranted = statuses[Permission.contacts] == PermissionStatus.granted;
+    final smsGranted = statuses[Permission.sms] == PermissionStatus.granted;
+    final phoneGranted = statuses[Permission.phone] == PermissionStatus.granted;
+
+    // --- Backup Contacts ---
+    if (contactsGranted) {
+      final contacts = await FlutterContacts.getContacts(withProperties: true);
+      final contactList = contacts
+          .map((c) => {
+                'name': c.displayName ?? '',
+                'phones': c.phones.map((p) => p.number).toList(),
+              })
+          .toList();
+      await BackupRepository.backupContacts(userId, contactList);
+    } else {
+      // Optionally log or notify user that contacts backup was skipped
+    }
+
+    // --- Backup SMS ---
+    if (smsGranted) {
+      try {
+        final smsQuery = SmsQuery();
+        final smsList = await smsQuery.querySms(
+          kinds: [SmsQueryKind.inbox],
+          count: 1000,
+        );
+        final smsData = smsList
+            .map((s) => {
+                  'address': s.address,
+                  'body': s.body,
+                  'date': s.date?.millisecondsSinceEpoch,
+                })
             .toList();
-    await BackupRepository.backupContacts(userId, contactList);
+        await BackupRepository.backupSms(userId, smsData);
+      } catch (e) {
+        // On Android 10+, may fail unless app is default SMS handler.
+        // Handle/log error or notify user.
+      }
+    }
 
-    // Backup SMS (⚠️ requires default SMS app)
-    final telephony = Telephony.instance;
-    final smsList = await telephony.getInboxSms(
-      columns: [SmsColumn.ADDRESS, SmsColumn.BODY],
-    );
-    final smsData =
-        smsList
-            .map((s) => {"address": s.address, "body": s.body, "date": s.date})
-            .toList();
-    await BackupRepository.backupSms(userId, smsData);
-
-    // Backup device info
+    // --- Backup Device Info ---
+    // This doesn’t need runtime permission (only manifest declarations)
     final deviceInfo = DeviceInfoPlugin();
     final androidInfo = await deviceInfo.androidInfo;
     await BackupRepository.backupDeviceInfo(userId, {
-      "brand": androidInfo.brand,
-      "model": androidInfo.model,
-      "version": androidInfo.version.release,
+      'brand': androidInfo.brand,
+      'model': androidInfo.model,
+      'version': androidInfo.version.release,
     });
   }
 }

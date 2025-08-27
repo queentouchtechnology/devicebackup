@@ -43,13 +43,21 @@ dependencies:
   device_info_plus: ^10.1.0
 
   # Contacts access
-  contacts_service: ^0.6.3
+  #contacts_service: ^0.6.3
 
   # (Optional) SMS access - requires app to be default SMS app on modern Android
-  telephony: ^0.2.0
+  #telephony: ^0.2.0
 
   # Icons
   cupertino_icons: ^1.0.8
+  #location
+  geolocator: ^14.0.2
+
+  #sms read
+  flutter_sms_inbox: ^1.0.4
+
+  #contact
+  flutter_contacts: ^1.1.9+2
 
 
 dev_dependencies:
