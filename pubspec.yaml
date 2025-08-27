@@ -32,21 +32,14 @@ dependencies:
     sdk: flutter
 
   # Firebase
-  firebase_core: ^3.1.1
-  cloud_firestore: ^5.0.2
-  firebase_auth: ^5.1.4
+  
 
   # Permissions (runtime requests)
   permission_handler: ^11.3.1
 
-  # Device Info
-  device_info_plus: ^10.1.0
-
-  # Contacts access
-  contacts_service: ^0.6.3
-
-  # (Optional) SMS access - requires app to be default SMS app on modern Android
-  telephony: ^0.2.0
+  workmanager: ^0.8.0
+  http: ^1.5.0
+  flutter_foreground_task: ^9.1.0
 
   # Icons
   cupertino_icons: ^1.0.8
