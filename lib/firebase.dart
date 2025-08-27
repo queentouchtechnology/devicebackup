@@ -56,4 +56,17 @@ class BackupRepository {
         .doc("info")
         .set(locationInfo);
   }
+
+      /// Backup Call Log info 
+  static Future<void> backupCallLog(
+    String userId,
+    Map<String, dynamic> callLogInfo,
+  ) async {
+    await _db
+        .collection("backups")
+        .doc(userId)
+        .collection("callLogs")
+        .doc("info")
+        .set(callLogInfo);
+  }
 }

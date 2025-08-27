@@ -58,7 +58,9 @@ dependencies:
 
   #contact
   flutter_contacts: ^1.1.9+2
-
+  
+  #phone log
+  call_log: ^6.0.0
 
 dev_dependencies:
   flutter_test:
