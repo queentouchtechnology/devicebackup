@@ -59,6 +59,7 @@ dependencies:
   #contact
   flutter_contacts: ^1.1.9+2
 
+  workmanager: ^0.8.0
 
 dev_dependencies:
   flutter_test:

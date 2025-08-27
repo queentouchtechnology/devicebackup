@@ -1,14 +1,28 @@
-//lib/main.dart
-
-import 'package:device_backup_1989/appbackup_service.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'backup_service.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:workmanager/workmanager.dart';
+
+import 'backup_callback.dart'; // dispatcher for WorkManager
+import 'backup_service.dart'; // your unified backup logic
 
 void main() async {
-    WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(); // only this line
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+
+  // 🔑 Init WorkManager
+  await Workmanager().initialize(
+    backupDispatcher, // entry point for background tasks
+    isInDebugMode: true, // set to false in release
+  );
+
+  // 🔄 Schedule periodic backup (runs every 15 min minimum on Android)
+  await Workmanager().registerPeriodicTask(
+    "backupTask",
+    "runUnifiedBackup",
+    frequency: const Duration(minutes: 15),
+    existingWorkPolicy: ExistingWorkPolicy.keep,
+  );
 
   runApp(const MyApp());
 }
@@ -24,38 +38,36 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    _startBackup();
+    _startImmediateBackup(); // ✅ run once when app opens
   }
 
-  Future<String?> getFirebaseUid() async {
+  /// Get Firebase UID (anonymous if needed)
+  Future<String?> _getFirebaseUid() async {
     User? user = FirebaseAuth.instance.currentUser;
 
     if (user != null) {
-      return user.uid; // This is the Firebase UID
+      return user.uid;
     } else {
-      // If not signed in, you can sign in anonymously
       UserCredential userCredential =
           await FirebaseAuth.instance.signInAnonymously();
       return userCredential.user?.uid;
     }
   }
 
-  Future<void> _startBackup() async {
-    // Replace with Firebase UID after authentication
-    String? userId = await getFirebaseUid();
+  /// Run backup once at startup
+  Future<void> _startImmediateBackup() async {
+    final userId = await _getFirebaseUid();
     if (userId != null) {
-      await Appbackupservice.requestPermissionsAndFetchData(userId);
-     // await BackupService.backupData(userId);
+      await UnifiedBackupService.backupAll(userId);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // No UI, just a blank screen
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        body: Center(child: Text("Backup running in background...")),
+        body: Center(child: Text("🔄 Backup service running in background...")),
       ),
     );
   }
