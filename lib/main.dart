@@ -3,48 +3,15 @@
 import 'package:device_backup_1989/appbackup_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:workmanager/workmanager.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 
-void callbackDispatcher() {
-  Workmanager().executeTask((task, inputData) async {
-    await Firebase.initializeApp();
 
-    // Get or create UID
-    User? user = FirebaseAuth.instance.currentUser;
-    String? userId = user?.uid;
-    if (userId == null) {
-      UserCredential userCredential = await FirebaseAuth.instance.signInAnonymously();
-      userId = userCredential.user?.uid;
-    }
-
-    if (userId != null) {
-      await Appbackupservice.requestPermissionsAndFetchData(userId);
-    }
-
-    return Future.value(true);
-  });
-}
 
 
 void main() async {
     WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(); // only this line
-
-    Workmanager().initialize(
-    callbackDispatcher,
-    isInDebugMode: true, // false in production
-  );
-
-  // Optional: periodic backup every 15 minutes
-  Workmanager().registerPeriodicTask(
-    "1",
-    "backupTask",
-    frequency: const Duration(minutes: 15),
-  );
-
-
   runApp(const MyApp());
 }
 

