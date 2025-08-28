@@ -7,17 +7,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:http/http.dart' as http;
 
-
+// The callback function should always be a top-level or static function.
+@pragma('vm:entry-point')
+void startCallback() {
+    print("🚀 startCallback called, setting TelegramTask handler");
+  FlutterForegroundTask.setTaskHandler(TelegramTask());
+  print("✅ TelegramTask handler set");
+}
 
 void main() async {
-  runApp(const MyApp());
-
+   WidgetsFlutterBinding.ensureInitialized();
+  
   FlutterForegroundTask.init(
   androidNotificationOptions: AndroidNotificationOptions(
     channelId: 'telegram_backup',
     channelName: 'Telegram Backup',
     channelDescription: 'Runs every 2 minutes',
-    channelImportance: NotificationChannelImportance.DEFAULT, // <- use this
+    channelImportance: NotificationChannelImportance.LOW, // <- use this
+    priority: NotificationPriority.LOW, 
+    showBadge :true
+    
   ),
   iosNotificationOptions: const IOSNotificationOptions(),
   foregroundTaskOptions:  ForegroundTaskOptions(
@@ -26,20 +35,22 @@ void main() async {
     allowWifiLock: true,
   ),
 );
+runApp(const MyApp());
 }
+
+
+
 
 // Task Handler
 class TelegramTask extends TaskHandler {
-  Timer? _timer;
 
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter taskStarter) async {
     // Run immediately
-    sendMessage();
-    // Schedule every 2 minutes
-    _timer = Timer.periodic(const Duration(minutes: 2), (_) {
-      sendMessage();
-    });
+     print("🔥 TelegramTask onStart called at $timestamp");
+   await  sendMessage();
+   
+    
   }
 
 
@@ -48,18 +59,28 @@ class TelegramTask extends TaskHandler {
 
   @override
   Future<void> onDestroy(DateTime timestamp, bool isStoppedManually) async {
-    _timer?.cancel();
+    print("💀 TelegramTask onDestroy called at $timestamp, stoppedManually=$isStoppedManually");
   }
 
    @override
   Future<void> onRepeatEvent(DateTime timestamp,) async {
-    // Not used because Timer handles 2 mins interval
+     print("⏰ TelegramTask onRepeatEvent called at $timestamp");
+       try {
+    await sendMessage();
+    print("Task repeated successfully");
+  } catch (e) {
+    print("Error in onRepeatEvent: $e");
+  }
   }
 
   @override
-  void onButtonPressed(String id) {}
+  void onButtonPressed(String id) {
+        print("🔘 Notification button pressed: $id");
+  }
   @override
-  void onNotificationPressed() {}
+  void onNotificationPressed() {
+        print("🔔 Notification clicked");
+  }
 }
 
 
@@ -78,20 +99,32 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    // Run immediately
-    sendMessage();
-    // Schedule every 2 minutes
-    timer = Timer.periodic(const Duration(minutes: 2), (_) {
-      sendMessage();
+      // Send immediately when app is open
+  //sendMessage();
+  Future.delayed(const Duration(seconds: 2), () {
+    startService();
+  });
+
+
+  }
+
+Future<void> startService()async {
+final  ServiceRequestResult result = await FlutterForegroundTask.startService(
+  notificationTitle: 'Telegram Backup Running',
+  notificationText: 'Sending every 2 minutes...',
+  callback: startCallback,
+);
+   if (result is ServiceRequestSuccess) {
+    print("✅ Foreground service started successfully");
+  } else if (result is ServiceRequestFailure) {
+    print("❌ Failed: ${result.error}");
+    // Retry after short delay
+    Future.delayed(const Duration(seconds: 5), () {
+      print("🔄 Retrying foreground service...");
+      startService();
     });
   }
-
-  @override
-  void dispose() {
-    timer?.cancel();
-    super.dispose();
-  }
-
+}
 
 
   @override
@@ -109,10 +142,7 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-// Task callback
-void startCallback() {
-  FlutterForegroundTask.setTaskHandler(TelegramTask());
-}
+
 
 
 
@@ -128,7 +158,7 @@ Future<void> sendMessage() async {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         "chat_id": 1545236547,
-        "text": "Hi there! 👋 This message comes from Backup App.",
+        "text": "Hi there! 👋 This message come from Backup App.",
         "parse_mode": "HTML",
       }),
     );
