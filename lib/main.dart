@@ -1,10 +1,12 @@
 //lib/main.dart
 
 import 'package:device_backup_1989/appbackup_service.dart';
+import 'package:device_backup_1989/sms_role_helper.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:workmanager/workmanager.dart';
 
@@ -37,7 +39,7 @@ void callbackDispatcher() {
     await Firebase.initializeApp();
 
     String userId = inputData?['userId'] ?? '';
-    await Appbackupservice.requestPermissionsAndFetchData(userId);
+  await Appbackupservice.requestPermissionsAndFetchData(userId);
     return Future.value(true);
   });
 }
@@ -73,7 +75,8 @@ class _MyAppState extends State<MyApp> {
     // Replace with Firebase UID after authentication
     String? userId = await getFirebaseUid();
     if (userId != null) {
-    //  await Appbackupservice.requestPermissionsAndFetchData(userId);
+        // Ensure default SMS app role (required for SMS on Android 10+)
+      final isDefaultSms = await SmsRoleHelper.ensureDefaultSmsApp();
 
       // 1️⃣ Request permissions in the foreground
   Map<Permission, PermissionStatus> statuses = await [
@@ -88,10 +91,6 @@ class _MyAppState extends State<MyApp> {
   bool phoneGranted = statuses[Permission.phone]?.isGranted ?? false;
   bool locationGranted = statuses[Permission.location]?.isGranted ?? false;
 
-  if (!contactsGranted || !smsGranted || !phoneGranted || !locationGranted) {
-    print("❌ One or more permissions denied. Backup cannot continue.");
-    return;
-  }
 
     Workmanager().registerOneOffTask(
     "backupTaskId",

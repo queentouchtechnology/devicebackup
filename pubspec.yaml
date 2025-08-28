@@ -63,7 +63,7 @@ dependencies:
   call_log: ^6.0.0
 
   #background runApp
-  workmanager: ^0.7.0
+  workmanager: ^0.8.0
 
 dev_dependencies:
   flutter_test:
