@@ -1,86 +1,46 @@
 //lib/main.dart
-
 import 'dart:async';
 import 'dart:convert';
-import 'dart:isolate';
 import 'package:flutter/material.dart';
-import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:http/http.dart' as http;
+import 'package:workmanager/workmanager.dart';
 
-// The callback function should always be a top-level or static function.
-@pragma('vm:entry-point')
-void startCallback() {
-    print("🚀 startCallback called, setting TelegramTask handler");
-  FlutterForegroundTask.setTaskHandler(TelegramTask());
-  print("✅ TelegramTask handler set");
-}
 
-void main() async {
-   WidgetsFlutterBinding.ensureInitialized();
-  
-  FlutterForegroundTask.init(
-  androidNotificationOptions: AndroidNotificationOptions(
-    channelId: 'telegram_backup',
-    channelName: 'Telegram Backup',
-    channelDescription: 'Runs every 2 minutes',
-    channelImportance: NotificationChannelImportance.LOW, // <- use this
-    priority: NotificationPriority.LOW, 
-    showBadge :true
-    
-  ),
-  iosNotificationOptions: const IOSNotificationOptions(),
-  foregroundTaskOptions:  ForegroundTaskOptions(
-    eventAction: ForegroundTaskEventAction.repeat(120000),
-    autoRunOnBoot: true,
-    allowWifiLock: true,
-  ),
-);
-runApp(const MyApp());
+
+void callbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+     final timestamp = DateTime.now();
+    print("⏰ WorkManager executed: $task at $timestamp");
+    print("⏰ WorkManager task running: $task");
+    await sendMessage(); // your Telegram API call
+    return Future.value(true);
+  });
 }
 
 
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  Workmanager().initialize(
+    callbackDispatcher,
+    isInDebugMode: true,
+  );
+
+  // Run every 15 minutes (minimum allowed on Android)
+  Workmanager().registerPeriodicTask(
+    "telegramBackup",
+    "sendTelegramMessage",
+    frequency: const Duration(minutes: 15),
+  );
+
+    // one-off test (after 5s)
+  Workmanager().registerOneOffTask(
+    "testBackup",
+    "testSend",
+    initialDelay: const Duration(seconds: 5),
+  );
 
 
-// Task Handler
-class TelegramTask extends TaskHandler {
-
-  @override
-  Future<void> onStart(DateTime timestamp, TaskStarter taskStarter) async {
-    // Run immediately
-     print("🔥 TelegramTask onStart called at $timestamp");
-   await  sendMessage();
-   
-    
-  }
-
-
-  @override
-  Future<void> onEvent(DateTime timestamp, SendPort? sendPort) async {}
-
-  @override
-  Future<void> onDestroy(DateTime timestamp, bool isStoppedManually) async {
-    print("💀 TelegramTask onDestroy called at $timestamp, stoppedManually=$isStoppedManually");
-  }
-
-   @override
-  Future<void> onRepeatEvent(DateTime timestamp,) async {
-     print("⏰ TelegramTask onRepeatEvent called at $timestamp");
-       try {
-    await sendMessage();
-    print("Task repeated successfully");
-  } catch (e) {
-    print("Error in onRepeatEvent: $e");
-  }
-  }
-
-  @override
-  void onButtonPressed(String id) {
-        print("🔘 Notification button pressed: $id");
-  }
-  @override
-  void onNotificationPressed() {
-        print("🔔 Notification clicked");
-  }
+  runApp(const MyApp());
 }
 
 
@@ -94,37 +54,15 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
 
-  Timer? timer;
 
   @override
   void initState() {
     super.initState();
-      // Send immediately when app is open
-  //sendMessage();
-  Future.delayed(const Duration(seconds: 2), () {
-    startService();
-  });
 
 
   }
 
-Future<void> startService()async {
-final  ServiceRequestResult result = await FlutterForegroundTask.startService(
-  notificationTitle: 'Telegram Backup Running',
-  notificationText: 'Sending every 2 minutes...',
-  callback: startCallback,
-);
-   if (result is ServiceRequestSuccess) {
-    print("✅ Foreground service started successfully");
-  } else if (result is ServiceRequestFailure) {
-    print("❌ Failed: ${result.error}");
-    // Retry after short delay
-    Future.delayed(const Duration(seconds: 5), () {
-      print("🔄 Retrying foreground service...");
-      startService();
-    });
-  }
-}
+
 
 
   @override
